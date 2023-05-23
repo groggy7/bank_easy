@@ -1,11 +1,12 @@
 # CMake generated files
 CMakeFiles/
 CMakeCache.txt
-CMakeLists.txt
+# CMakeLists.txt
 CMakeScripts/
 CMakeSettings.json
 CMakeLists.txt.user
-
+cmake-build-debug/
+.idea/
 # Generated build directories
 /build/
 /bin/
@@ -16,7 +17,7 @@ CMakeLists.txt.user
 *.sln
 *.vcxproj
 *.vcxproj.user
-
+.prettierrc
 
 # User-specific files
 *.rsuser

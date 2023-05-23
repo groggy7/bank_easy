@@ -1,14 +1,11 @@
-#include "Customer.h"
+#include "customer.h"
 
 const double& Customer::GetBalance() const {
 	return this->balance;
 }
 
-void Customer::SetBalance(const double& balance, bool mode) {
-	if (mode)
-		this->balance += balance;
-	else
-		this->balance -= balance;
+void Customer::SetBalance(const double& balance) {
+	this->balance += balance;
 }
 
 const int& Customer::GetAccountNumber() const {
@@ -16,7 +13,7 @@ const int& Customer::GetAccountNumber() const {
 }
 
 const int& Customer::GetPassword() const {
-	return password;
+	return 5;
 }
 
 const int& Customer::GetPhoneNumber() const {
