@@ -8,29 +8,36 @@ class BankService {
 public:
     BankService(IBankRepository& repository) : repository(repository) {}
 
-    void AddCustomer(const std::string& name, double balance) {
-        Customer customer(name, balance);
+    void AddCustomer(const Customer& customer) {
         repository.AddCustomer(customer);
+    }
+
+    std::optional<Customer> GetCustomer(const int& accNum) {
+        return repository.GetCustomer(accNum);
     }
 
     std::vector<Customer> GetCustomers() {
         return repository.GetCustomers();
     }
 
-    void RemoveCustomer(const std::string& name) {
-        Customer customer(name, 0.0);
+    void RemoveCustomer(const Customer& customer) {
         repository.RemoveCustomer(customer);
     }
 
-    bool ValidateCustomer(const std::string& name) {
-        Customer customer(name, 0.0);
+    bool ValidateCustomer(const Customer& customer) {
         return repository.ValidateCustomer(customer);
     }
 
-    void TransferMoney(const std::string& senderName, const std::string& receiverName, double amount) {
-        Customer sender(senderName, 0.0);
-        Customer receiver(receiverName, 0.0);
-        repository.TransferMoney(sender, receiver, amount);
+    bool TransferMoney(const int& senderAccNum, const int& receiverAccNum, const int& amount) {
+        return repository.TransferMoney(senderAccNum, receiverAccNum, amount);
+    }
+
+    void Deposit(const Customer& customer, const int& amount) {
+        repository.Deposit(customer, amount);
+    }
+
+    void Withdraw(const Customer& customer, const int& amount) {
+        repository.Withdraw(customer, amount);
     }
 
 private:

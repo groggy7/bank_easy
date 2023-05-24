@@ -6,10 +6,11 @@
 class Customer
 {
 public:
-	Customer(const std::string& longName, const int& phoneNumber) 
+	Customer(const std::string& longName, const int& phoneNumber, const int& password) 
 		:
 		longName(longName),
-		phoneNumber(phoneNumber)
+		phoneNumber(phoneNumber),
+		password(password)
 	{
 		balance = 0;
 
@@ -17,49 +18,68 @@ public:
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis(111'111'111, 999'999'999);
 		accountNumber = dis(gen);
-		password = 1234;
 	}
-	Customer(const std::string& longName, const int& accountNumber, const int& phoneNumber, const int& password, const double& balance)
-		:
-		longName(longName),
+
+	Customer(const int& accountNumber, const int& password) 
+		: 
 		accountNumber(accountNumber),
-		phoneNumber(phoneNumber),
-		password(password),
-		balance(balance)
+		password(password) 
 	{}
 
 	Customer() {}
-	const std::string& GetLongName() const;
-	
+
+	const std::string& GetLongName() const
+	{
+		return longName;
+	}
+
 	void SetLongName(const std::string& name) {
 		longName = name;
 	}
 
-	const int& GetAccountNumber() const;
+	const int& GetAccountNumber() const
+	{
+		return accountNumber;
+	}
 
-	void SetAccountNumber(const long long& accNum) {
+	void SetAccountNumber(const int& accNum) {
 		accountNumber = accNum;
 	}
 
-	const int& GetPassword() const;
+	const int& GetPassword() const
+	{
+		return password;
+	}
 
-	void SetPassword(const int8_t& pass) {
+	void SetPassword(const int &pass)
+	{
 		password = pass;
 	}
 
-	const int& GetPhoneNumber() const;
-
-	void SetPhoneNumber(const long long& phoneNum) {
-		phoneNumber = phoneNumber;
+	const int& GetPhoneNumber() const
+	{
+		return phoneNumber;
 	}
 
-	const double& GetBalance() const;
+	void SetPhoneNumber(const int &phoneNum)
+	{
+		phoneNumber = phoneNum;
+	}
 
-	void SetBalance(const double& balance);
+	const int& GetBalance() const
+	{
+		return balance;
+	}
+
+	void SetBalance(const double &b)
+	{
+		balance = b;
+	}
+
 private:
 	std::string longName;
 	int phoneNumber;
 	int accountNumber;
-	double balance;
-	int8_t password;
+	int balance;
+	int password;
 };
