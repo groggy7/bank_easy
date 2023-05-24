@@ -4,7 +4,6 @@ project(bank_easy)
 set(SOURCES
     src/main.cpp
     src/domain/customer.h
-    src/domain/customer.cpp
     src/infrastructure/MongoBankRepository.h
     src/infrastructure/IBankRepository.h
     src/application/BankService.h

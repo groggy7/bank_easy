@@ -1,8 +1,12 @@
 #include <vector>
+#include <cassert>
 #include <cstdint>
+#include <cstring>
+#include <cstdlib>
+#include <sstream>
 #include <iostream>
 #include <algorithm>
-#include <fmt/core.h>
+#include <stdexcept>
 #include <bsoncxx/json.hpp>
 #include <bsoncxx/types.hpp>
 #include <bsoncxx/document/view.hpp>
@@ -46,12 +50,77 @@ mongocxx::database GetDatabase() {
 class MongoBankRepository : public IBankRepository {
 public:
     MongoBankRepository() : database(GetDatabase()) {}
-    void AddCustomer(Customer& customer) override {
-        
+
+    void AddCustomer(const Customer &customer) override
+    {
+        std::vector<Customer> customers = GetCustomers();
+        for (auto &&c : customers)
+        {
+            if(c.GetLongName() == customer.GetLongName() || c.GetPhoneNumber() == customer.GetPhoneNumber())
+            {
+                std::cout << "Customer already exists." << std::endl;
+                return;
+            }
+        }
+
+        mongocxx::collection collection = database["customers"];
+        bsoncxx::document::value doc = make_document(
+            kvp("account_number", bsoncxx::types::b_int64{customer.GetAccountNumber()}),
+            kvp("long_name", bsoncxx::types::b_string{customer.GetLongName()}),
+            kvp("phone_number", bsoncxx::types::b_int64{customer.GetPhoneNumber()}),
+            kvp("password", bsoncxx::types::b_int64{customer.GetPassword()}),
+            kvp("balance", bsoncxx::types::b_int64{customer.GetBalance()}));
+
+        try {
+        auto insert_one_result = collection.insert_one(std::move(doc));
+        }
+        catch (const std::exception &ex)
+        {
+            std::cout << ex.what() << std::endl;
+        }
+    }
+
+    std::optional<Customer> GetCustomer(const int& accNum) {
+        auto collection = database["customers"];
+        bsoncxx::document::value filter = make_document(
+            kvp("account_number", accNum));
+
+        mongocxx::stdx::optional<bsoncxx::document::value> maybe_result = collection.find_one(std::move(filter));
+
+        if (!maybe_result) {
+            return std::nullopt;
+        }
+
+        bsoncxx::document::view result_view = maybe_result->view();
+
+        Customer found_customer;
+        for (auto &&element : result_view)
+        {
+            if (element.key() == "long_name")
+            {
+                found_customer.SetLongName(std::string(element.get_string()));
+            }
+            else if (element.key() == "password")
+            {
+                found_customer.SetPassword(element.get_int64().value);
+            }
+            else if (element.key() == "balance")
+            {
+                found_customer.SetBalance(element.get_int64().value);
+            }
+            else if (element.key() == "account_number")
+            {
+                found_customer.SetAccountNumber(element.get_int64().value);
+            }
+            else if (element.key() == "phone_number")
+            {
+                found_customer.SetPhoneNumber(element.get_int64().value);
+            }
+        }
+        return found_customer;
     }
 
     std::vector<Customer> GetCustomers() override {
-        //mongocxx::v_noabi::database db = GetDatabase();
         auto collection = database["customers"];
         auto cursor_all = collection.find({});
         std::vector<Customer> customers;
@@ -67,7 +136,7 @@ public:
                 }
                 else if (element.key() == "password")
                 {
-                    customer.SetPassword(element.get_int32().value);
+                    customer.SetPassword(element.get_int64().value);
                 }
                 else if (element.key() == "balance")
                 {
@@ -87,18 +156,81 @@ public:
     return customers;
     }
 
-    void RemoveCustomer(Customer& customer) override {
+    void RemoveCustomer(const Customer& customer) override {
+    auto collection = database["customers"];
+
+    bsoncxx::document::value filter = make_document(
+        kvp("account_number", customer.GetAccountNumber()));
+
+    mongocxx::stdx::optional<mongocxx::result::delete_result> result = collection.delete_one(std::move(filter));
+
+    if (!result) {
+        std::cout << "Failed to delete document." << std::endl;
+    }
+
+    std::cout << "Document deleted successfully." << std::endl;
+    }
+
+    bool ValidateCustomer(const Customer& customer) override {
+       auto customers = GetCustomers();
+        for (auto&& c : customers) {
+            if (c.GetAccountNumber() == customer.GetAccountNumber() && c.GetPassword() == customer.GetPassword()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool TransferMoney(const int& senderAccNum, const int& receiverAccNum, const int& amount) override {
+        Customer senderAcc = GetCustomer(senderAccNum).value();
+        if (senderAcc.GetBalance() < amount) {
+            std::cout << "Insufficient balance." << std::endl;
+            return false;
+        }
+
+        auto receiver = GetCustomer(receiverAccNum);
+        if (!receiver.has_value())
+        {
+            std::cout << "Receiver account not found." << std::endl;
+            return false;
+        }
+
+        Customer receiverAcc = receiver.value();
+        auto collection = database["customers"];
+
+        auto update_sender = collection.update_one(
+            make_document(kvp("account_number", senderAcc.GetAccountNumber())),
+            make_document(
+                kvp("$set", make_document(kvp("balance", bsoncxx::types::b_int64{senderAcc.GetBalance() - amount})))));
+
+        auto update_reveiver = collection.update_one(
+            make_document(kvp("account_number", receiverAcc.GetAccountNumber())),
+            make_document(
+                kvp("$set", make_document(kvp("balance", bsoncxx::types::b_int64{receiverAcc.GetBalance() + amount})))));
         
+        return true;
     }
 
-    bool ValidateCustomer(Customer& customer) override {
-       return true;
+    void Deposit(const Customer &customer, const int &amount)
+    {
+        auto collection = database["customers"];
+        auto update_one_result = collection.update_one(
+            make_document(kvp("account_number", customer.GetAccountNumber())),
+            make_document(
+                kvp("$set", make_document(kvp("balance", bsoncxx::types::b_int64{customer.GetBalance() + amount})))));
     }
 
-    void TransferMoney(Customer& sender, Customer& receiver, double amount) override {
-       
-    }
+    void Withdraw(const Customer& customer, const int& amount) {
+        if (customer.GetBalance() < amount) {
+            std::cout << "Insufficient balance." << std::endl;
+            return;
+        }
 
+        auto collection = database["customers"];
+        auto update_one_result = collection.update_one(make_document(kvp("account_number", customer.GetAccountNumber())),
+        make_document(
+            kvp("$set", make_document(kvp("balance", bsoncxx::types::b_int64{customer.GetBalance() - amount})))));
+    }
 private:
     mongocxx::v_noabi::database database;
 };
