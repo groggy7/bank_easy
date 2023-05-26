@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.0)
+cmake_minimum_required(VERSION 3.22.1)
 project(bank_easy)
 
 set(SOURCES
@@ -7,18 +7,26 @@ set(SOURCES
     src/infrastructure/MongoBankRepository.h
     src/infrastructure/IBankRepository.h
     src/application/BankService.h
-    )
+)
+
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
-set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
-
-find_package(bsoncxx CONFIG REQUIRED)
-find_package(mongocxx CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
+find_package(bsoncxx REQUIRED)
+find_package(mongocxx REQUIRED)
 
 add_executable(bank_easy ${SOURCES})
-target_include_directories(bank_easy PRIVATE C:/vcpkg/installed/x64-windows/include)
-target_link_directories(bank_easy PRIVATE C:/vcpkg/installed/x64-windows/lib)
+
+target_link_libraries(bank_easy PRIVATE /usr/local/lib/libmongocxx.so)
+target_link_libraries(bank_easy PRIVATE /usr/local/lib/libbsoncxx.so)
+
+target_include_directories(bank_easy
+    PRIVATE /usr/local/include/mongocxx/v_noabi
+    PRIVATE /usr/local/include/bsoncxx/v_noabi
+)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
