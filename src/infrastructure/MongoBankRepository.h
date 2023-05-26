@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <sstream>
+#include <string>
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
@@ -80,7 +81,7 @@ public:
         }
     }
 
-    std::optional<Customer> GetCustomer(const int& accNum) {
+    std::optional<Customer> GetCustomer(const int& accNum) override {
         auto collection = database["customers"];
         bsoncxx::document::value filter = make_document(
             kvp("account_number", accNum));
@@ -96,23 +97,23 @@ public:
         Customer found_customer;
         for (auto &&element : result_view)
         {
-            if (element.key() == "long_name")
+            if (element.key().compare("long_name") == 0)
             {
-                found_customer.SetLongName(std::string(element.get_string()));
+                found_customer.SetLongName(std::string(element.get_string().value.begin(), element.get_string().value.end()));
             }
-            else if (element.key() == "password")
+            else if (element.key().compare("password") == 0)
             {
                 found_customer.SetPassword(element.get_int64().value);
             }
-            else if (element.key() == "balance")
+            else if (element.key().compare("balance") == 0)
             {
                 found_customer.SetBalance(element.get_int64().value);
             }
-            else if (element.key() == "account_number")
+            else if (element.key().compare("account_number") == 0)
             {
                 found_customer.SetAccountNumber(element.get_int64().value);
             }
-            else if (element.key() == "phone_number")
+            else if (element.key().compare("phone_number") == 0)
             {
                 found_customer.SetPhoneNumber(element.get_int64().value);
             }
@@ -130,23 +131,23 @@ public:
             Customer customer;
             for (auto &&element : doc)
             {
-                if (element.key() == "long_name")
+                if (element.key().compare("long_name") == 0)
                 {
-                    customer.SetLongName(std::string(element.get_string()));
+                    customer.SetLongName(std::string(element.get_string().value.begin(), element.get_string().value.end()));
                 }
-                else if (element.key() == "password")
+                else if (element.key().compare("password") == 0)
                 {
                     customer.SetPassword(element.get_int64().value);
                 }
-                else if (element.key() == "balance")
+                else if (element.key().compare("balance") == 0)
                 {
                     customer.SetBalance(element.get_int64().value);
                 }
-                else if (element.key() == "account_number")
+                else if (element.key().compare("account_number") == 0)
                 {
                     customer.SetAccountNumber(element.get_int64().value);
                 }
-                else if (element.key() == "phone_number")
+                else if (element.key().compare("phone_number") == 0)
                 {
                     customer.SetPhoneNumber(element.get_int64().value);
                 }
@@ -211,8 +212,7 @@ public:
         return true;
     }
 
-    void Deposit(const Customer &customer, const int &amount)
-    {
+    void Deposit(const Customer &customer, const int &amount) override {
         auto collection = database["customers"];
         auto update_one_result = collection.update_one(
             make_document(kvp("account_number", customer.GetAccountNumber())),
@@ -220,7 +220,7 @@ public:
                 kvp("$set", make_document(kvp("balance", bsoncxx::types::b_int64{customer.GetBalance() + amount})))));
     }
 
-    void Withdraw(const Customer& customer, const int& amount) {
+    void Withdraw(const Customer& customer, const int& amount) override {
         if (customer.GetBalance() < amount) {
             std::cout << "Insufficient balance." << std::endl;
             return;
